@@ -80,19 +80,17 @@ fn run() -> Result<()> {
 
         // Not sure how to build around this without duplicating code
         // looks very messy
-        match config.cutoff() {
-            Some(cutoff) => {
-                let last_point = resp.users().last().unwrap().points;
-                if last_point < cutoff {
-                    let filtered: Vec<User> = resp.into_users()
-                                       .into_iter()
-                                       .filter(|user| user.points > cutoff)
-                                       .collect();
-                    write_to_csv(&mut csv, filtered.as_slice())?;
-                    break
+        if let Some(cutoff) config.cutoff() {
+            let last_point = resp.users().last().unwrap().points;
+            if last_point < cutoff {
+                let filtered: Vec<User> = resp.into_users()
+                                   .into_iter()
+                                   .filter(|user| user.points > cutoff)
+                                   .collect();
+                write_to_csv(&mut csv, filtered.as_slice())?;
+                break
                 }
             }
-            None => {}
         }
         write_to_csv(&mut csv, &resp.users())?;
         info!("successfully wrote to csv");
