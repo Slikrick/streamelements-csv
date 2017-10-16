@@ -59,6 +59,17 @@ fn run() -> Result<()> {
         .has_headers(false)
         .from_path(format!("{}-{}-points.csv", today, opt))?;
     info!("successfully created csv writer");
+    if let Some(cutoff) = config.cutoff() {
+        let last_point = response.users().last().unwrap().points;
+        if last_point < cutoff {
+            let filtered: Vec<User> = response.into_users()
+                               .into_iter()
+                               .filter(|user| user.points > cutoff)
+                               .collect();
+            write_to_csv(&mut csv, filtered.as_slice())?;
+            return Ok(())
+        }
+    }
     write_to_csv(&mut csv, &response.users())?;
 
     // We request 1000 initially, if the total is less
@@ -80,7 +91,7 @@ fn run() -> Result<()> {
 
         // Not sure how to build around this without duplicating code
         // looks very messy
-        if let Some(cutoff) config.cutoff() {
+        if let Some(cutoff) = config.cutoff() {
             let last_point = resp.users().last().unwrap().points;
             if last_point < cutoff {
                 let filtered: Vec<User> = resp.into_users()
@@ -89,7 +100,6 @@ fn run() -> Result<()> {
                                    .collect();
                 write_to_csv(&mut csv, filtered.as_slice())?;
                 break
-                }
             }
         }
         write_to_csv(&mut csv, &resp.users())?;
@@ -99,7 +109,7 @@ fn run() -> Result<()> {
 }
 
 /// Convenience function because Toml doesn't support reading from a file
-/// serde_json
+/// serde_json does, :/
 fn load_toml() -> Result<ActualConfig> {
     use std::io::Read;
     let mut file = File::open("./config.toml")?;
