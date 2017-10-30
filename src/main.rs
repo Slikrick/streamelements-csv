@@ -23,7 +23,7 @@ mod data;
 use data::{ActualConfig, Alltime, Error, User};
 use structopt::StructOpt;
 
-const BASE_URL: &str = "https://api.streamelements.com/kappa/v1";
+const BASE_URL: &str = "https://api.streamelements.com/kappa/v2";
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -42,8 +42,8 @@ fn run() -> Result<()> {
     let request = reqwest::Client::new();
     trace!("created reqwest client");
 
-    let alltime_url = format!("{}/points/{}/alltime/1000", BASE_URL, channel);
-    let top_url = format!("{}/points/{}/top/1000", BASE_URL, channel);
+    let alltime_url = format!("{}/points/{}/alltime?limit=1000", BASE_URL, channel);
+    let top_url = format!("{}/points/{}/top?limit=1000", BASE_URL, channel);
     
     let (url, opt)  = match matches {
         Opts::Alltime => (alltime_url, "alltime"),
@@ -84,7 +84,7 @@ fn run() -> Result<()> {
     for offset in 2..offset_count + 1 {
         let offset = offset * 1000;
         let resp: Alltime = request
-            .get(&format!("{}?offset={}", url, offset))
+            .get(&format!("{}&offset={}", url, offset))
             .send()?
             .json()?;
         info!("received response from streamelements api");

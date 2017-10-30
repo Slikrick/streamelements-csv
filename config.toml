@@ -1,6 +1,8 @@
 [info]
-# username of the channel to look up
-channel = ""
+# Streamelements uuid of the channel to look up
+# this can be found at https://streamelements.com/dashboard/account/information 
+streamelements_id = ""
+
 # Doesn't include users at or below the cutoff threshold in the csv
 # used to ignore inactive users
 # remove the "#" to set a cutoff
