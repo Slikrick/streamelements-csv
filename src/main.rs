@@ -10,10 +10,10 @@ extern crate reqwest;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate simplelog;
-extern crate toml;
 extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
+extern crate toml;
 
 use chrono::offset::Utc;
 use csv::WriterBuilder;
@@ -30,12 +30,15 @@ type Result<T> = std::result::Result<T, Error>;
 fn main() {
     match run() {
         Ok(_) => println!("Program completed without errors"),
-        Err(e) => {eprintln!("Program errored: {}", e); error!("Error: {}", e) }
+        Err(e) => {
+            eprintln!("Program errored: {}", e);
+            error!("Error: {}", e)
+        }
     }
 }
 
 fn run() -> Result<()> {
-    let matches = Opts::from_args();    
+    let matches = Opts::from_args();
     let config = load_toml()?;
     let channel = config.channel();
     info!("loaded channel: {}", channel);
@@ -44,30 +47,35 @@ fn run() -> Result<()> {
 
     let alltime_url = format!("{}/points/{}/alltime?limit=1000", BASE_URL, channel);
     let top_url = format!("{}/points/{}/top?limit=1000", BASE_URL, channel);
-    
-    let (url, opt)  = match matches {
+
+    let (url, opt) = match matches {
         Opts::Alltime => (alltime_url, "alltime"),
         Opts::Top => (top_url, "top"),
     };
     let response: Alltime = request.get(&url).send()?.json()?;
     info!("received response from streamelements api");
-    
+
     let today = Utc::today().format("%d-%m-%Y");
     info!("date for filename: {}", today);
-    
+
     let mut csv = WriterBuilder::new()
         .has_headers(false)
         .from_path(format!("{}-{}-points.csv", today, opt))?;
     info!("successfully created csv writer");
     if let Some(cutoff) = config.cutoff() {
-        let last_point = response.users().last().unwrap().points;
+        let last_point = response
+            .users()
+            .last()
+            .expect("No users were returned from the api")
+            .points;
         if last_point < cutoff {
-            let filtered: Vec<User> = response.into_users()
-                               .into_iter()
-                               .filter(|user| user.points > cutoff)
-                               .collect();
+            let filtered: Vec<User> = response
+                .into_users()
+                .into_iter()
+                .filter(|user| user.points > cutoff)
+                .collect();
             write_to_csv(&mut csv, filtered.as_slice())?;
-            return Ok(())
+            return Ok(());
         }
     }
     write_to_csv(&mut csv, &response.users())?;
@@ -92,14 +100,17 @@ fn run() -> Result<()> {
         // Not sure how to build around this without duplicating code
         // looks very messy
         if let Some(cutoff) = config.cutoff() {
-            let last_point = resp.users().last().unwrap().points;
+            let last_point = resp.users()
+                .last()
+                .expect("No users were returned from the api")
+                .points;
             if last_point < cutoff {
                 let filtered: Vec<User> = resp.into_users()
-                                   .into_iter()
-                                   .filter(|user| user.points > cutoff)
-                                   .collect();
+                    .into_iter()
+                    .filter(|user| user.points > cutoff)
+                    .collect();
                 write_to_csv(&mut csv, filtered.as_slice())?;
-                break
+                break;
             }
         }
         write_to_csv(&mut csv, &resp.users())?;

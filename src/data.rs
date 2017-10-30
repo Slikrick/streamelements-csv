@@ -26,8 +26,7 @@ pub struct User {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    #[serde(rename = "streamelements_id")]
-    channel: String,
+    #[serde(rename = "streamelements_id")] channel: String,
     cutoff: Option<u64>,
 }
 
